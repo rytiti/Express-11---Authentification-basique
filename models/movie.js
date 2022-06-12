@@ -14,7 +14,7 @@ const validate = (data, forCreation = true) => {
   }).validate(data, { abortEarly: false }).error;
 };
 
-const findMany = ({ filters: { color, max_duration } }) => {
+const findMany = ({ filters: { color, max_duration, userId } }) => {
   let sql = 'SELECT * FROM movies';
   const sqlValues = [];
 
@@ -28,7 +28,8 @@ const findMany = ({ filters: { color, max_duration } }) => {
 
     sqlValues.push(max_duration);
   }
-
+  sql += ' HAVING user_id = ? ;';
+  sqlValues.push(userId);
   return db.query(sql, sqlValues).then(([results]) => results);
 };
 
@@ -38,15 +39,15 @@ const findOne = (id) => {
     .then(([results]) => results[0]);
 };
 
-const create = ({ title, director, year, color, duration }) => {
+const create = ({ title, director, year, color, duration, user_id }) => {
   return db
     .query(
-      'INSERT INTO movies (title, director, year, color, duration) VALUES (?, ?, ?, ?, ?)',
-      [title, director, year, color, duration]
+      'INSERT INTO movies (title, director, year, color, duration, user_id) VALUES (?, ?, ?, ?, ?, ?)',
+      [title, director, year, color, duration, user_id]
     )
     .then(([result]) => {
       const id = result.insertId;
-      return { id, title, director, year, color, duration };
+      return { id, title, director, year, color, duration, user_id };
     });
 };
 

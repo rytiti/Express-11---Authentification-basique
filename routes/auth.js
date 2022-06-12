@@ -1,23 +1,25 @@
-const usersRouter = require('express').Router();
+const authRouter = require('express').Router();
 const User = require('../models/user');
+const { calculateToken } = require('../helpers/users');
 
-usersRouter.get('/checkCredentials', (req, res) => {
+authRouter.post('/login', (req, res) => {
   const { email, password } = req.body;
   let validationErrors = null;
-  
   User.findByEmail(email)
     .then((user) => {
       validationErrors = User.validateConnexionBody(req.body);
       if (validationErrors) {
         return Promise.reject('INVALID_DATA');
       }
-      console.log("user =>", user)
       if (user) {
         User.verifyPassword(password, user.hashedPassword)
           .then(validated => {
             if (validated) {
               delete user.hashedPassword
-              return res.status(200).json({ user: user })
+              let token = calculateToken(email)
+              User.update(user.id, { token: token })
+              res.cookie('user_token', token)
+              res.send()
             } else {
               return res.status(401).send("Wrong password")
             }
@@ -33,4 +35,4 @@ usersRouter.get('/checkCredentials', (req, res) => {
     });
 })
 
-module.exports = usersRouter;
+module.exports = authRouter;

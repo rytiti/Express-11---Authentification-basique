@@ -1,20 +1,31 @@
 const moviesRouter = require('express').Router();
 const Movie = require('../models/movie');
+const User = require('../models/user');
 
 moviesRouter.get('/', (req, res) => {
   const { max_duration, color } = req.query;
-  Movie.findMany({ filters: { max_duration, color } })
-    .then((movies) => {
-      res.json(movies);
+  User.findByToken(req.cookies.user_token)
+    .then(user => {
+      if (user) {
+        console.log("id user found with token =>", user)
+        const userId = user.id;
+        Movie.findMany({ filters: { max_duration, color, userId } })
+          .then((movies) => {
+            res.status(200).json(movies);
+          })
+          .catch((err) => {
+            console.log(err);
+            res.status(500).send('Error retrieving movies from database');
+          });
+      } else {
+        return res.status(401).send("you do not have the credentials to perform this manipulation");
+      }
     })
-    .catch((err) => {
-      console.log(err);
-      res.status(500).send('Error retrieving movies from database');
-    });
 });
 
 moviesRouter.get('/', async (req, res) => {
   const { max_duration, color } = req.query;
+  const token = req.cookies.user_token;
   Movie.findMany({ filters: { max_duration, color } })
     .then((movies) => {
       res.json(movies);
@@ -39,19 +50,30 @@ moviesRouter.get('/:id', (req, res) => {
 });
 
 moviesRouter.post('/', (req, res) => {
-  const error = Movie.validate(req.body);
-  if (error) {
-    res.status(422).json({ validationErrors: error.details });
-  } else {
-    Movie.create(req.body)
-      .then((createdMovie) => {
-        res.status(201).json(createdMovie);
-      })
-      .catch((err) => {
-        console.error(err);
-        res.status(500).send('Error saving the movie');
-      });
-  }
+  console.log(req.cookies)
+  User.findByToken(req.cookies.user_token)
+    .then(user => {
+      if (user) {
+        console.log("id user found with token =>", user)
+        const error = Movie.validate(req.body);
+        if (error) {
+          res.status(422).json({ validationErrors: error.details });
+        } else {
+          req.body.user_id = user.id;
+          Movie.create(req.body)
+            .then((createdMovie) => {
+              res.status(201).json(createdMovie);
+            })
+            .catch((err) => {
+              console.error(err);
+              res.status(500).send('Error saving the movie');
+            });
+        }
+      } else {
+        return res.status(401).send("you do not have the credentials to perform this manipulation");
+      }
+
+    })
 });
 
 moviesRouter.put('/:id', (req, res) => {

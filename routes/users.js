@@ -1,5 +1,6 @@
 const usersRouter = require('express').Router();
 const User = require('../models/user');
+const { calculateToken } = require('../helpers/users');
 
 usersRouter.get('/', (req, res) => {
   const { language } = req.query;
@@ -26,6 +27,7 @@ usersRouter.get('/:id', (req, res) => {
 });
 
 usersRouter.post('/', async (req, res) => {
+  console.log("req.bdy =>", req.body)
   const { email } = req.body;
   let validationErrors = null;
 
@@ -36,8 +38,10 @@ usersRouter.post('/', async (req, res) => {
       if (validationErrors) {
         return Promise.reject('INVALID_DATA');
       }
+      req.body.token = calculateToken(email);
       await User.create(req.body)
         .then((user) => {
+          delete user.hashedPassword
           res.status(201).send(user);
         })
     })
@@ -64,9 +68,12 @@ usersRouter.put('/:id', (req, res) => {
       if (otherUserWithEmail) return Promise.reject('DUPLICATE_EMAIL');
       validationErrors = User.validate(req.body, false);
       if (validationErrors) return Promise.reject('INVALID_DATA');
+      req.body.token = calculateToken(req.body.email);
       return User.update(req.params.id, req.body);
     })
     .then(() => {
+      delete existingUser.hashedPassword;
+      res.cookie('user_token', req.body.token);
       res.status(200).json({ ...existingUser, ...req.body });
     })
     .catch((err) => {

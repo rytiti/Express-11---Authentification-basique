@@ -68,6 +68,12 @@ const findByEmailWithDifferentId = async (email, id) => {
     .then(([results]) => results[0]);
 };
 
+const findByToken = async (token) => {
+  return db
+    .query('SELECT id FROM users WHERE token = ?', [token])
+    .then(([results]) => results[0]);
+}
+
 const create = async (data) => {
   return hashPassword(data.password)
     .then(hashedPassword => {
@@ -104,4 +110,5 @@ module.exports = {
   destroy,
   findByEmail,
   findByEmailWithDifferentId,
+  findByToken
 };
