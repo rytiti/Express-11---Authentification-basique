@@ -28,14 +28,14 @@ const validate = (data, forCreation = true) => {
     lastname: Joi.string().max(255).presence(presence),
     city: Joi.string().allow(null, '').max(255),
     language: Joi.string().allow(null, '').max(255),
-    password: Joi.string().min(8).max(255).presence(presence)
+    password: Joi.string().min(9).max(255).presence(presence)
   }).validate(data, { abortEarly: false }).error;
 };
 
 const validateConnexionBody = (data) => {
   return Joi.object({
     email: Joi.string().email().max(255).presence("required"),
-    password: Joi.string().min(8).max(255).presence("required")
+    password: Joi.string().min(9).max(255).presence("required")
   }).validate(data, { abortEarly: false }).error;
 };
 
