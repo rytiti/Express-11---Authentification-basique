@@ -25,18 +25,21 @@ usersRouter.get('/:id', (req, res) => {
     });
 });
 
-usersRouter.post('/', (req, res) => {
+usersRouter.post('/', async (req, res) => {
   const { email } = req.body;
   let validationErrors = null;
-  User.findByEmail(email)
-    .then((existingUserWithEmail) => {
+
+  await User.findByEmail(email)
+    .then(async (existingUserWithEmail) => {
       if (existingUserWithEmail) return Promise.reject('DUPLICATE_EMAIL');
       validationErrors = User.validate(req.body);
-      if (validationErrors) return Promise.reject('INVALID_DATA');
-      return User.create(req.body);
-    })
-    .then((createdUser) => {
-      res.status(201).json(createdUser);
+      if (validationErrors) {
+        return Promise.reject('INVALID_DATA');
+      }
+      await User.create(req.body)
+        .then((user) => {
+          res.status(201).send(user);
+        })
     })
     .catch((err) => {
       console.error(err);
